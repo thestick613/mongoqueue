@@ -89,7 +89,7 @@ class MongoQueue(object):
                         "locked_at": datetime.now()
                     }},
             sort=[('priority', pymongo.DESCENDING)],
-            new=1,
+            new=True,
             limit=1
         ))
 
