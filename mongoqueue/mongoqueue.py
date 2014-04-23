@@ -194,3 +194,4 @@ class Job(object):
         else:
             error = traceback.format_exc()
             self.error(error)
+            return True
