@@ -111,6 +111,20 @@ class MongoQueueTest(TestCase):
         job = self.queue.next()
         self.assert_job_equal(job, data)
 
+    def test_max_attempts(self):
+        data = {"context_id": "alpha",
+                "ts": time.time()}
+        self.queue.put(dict(data))
+        attempts = 0
+        for i in xrange(0, self.queue.max_attempts):
+            job = self.queue.next()
+            if not job:
+                break
+            with job:
+                attempts += 1
+                raise Exception()
+        self.assertEqual(attempts, self.queue.max_attempts)
+
     def test_error(self):
         pass
 
