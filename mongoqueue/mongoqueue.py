@@ -83,9 +83,11 @@ class MongoQueue(object):
             query={"locked_by": None,
                    "locked_at": None,
                    "attempts": {"$lt": self.max_attempts}},
-            update={"$set": {"attempts": 1,
-                             "locked_by": self.consumer_id,
-                             "locked_at": datetime.now()}},
+            update={
+                    "$set": {
+                        "locked_by": self.consumer_id,
+                        "locked_at": datetime.now()
+                    }},
             sort=[('priority', pymongo.DESCENDING)],
             new=1,
             limit=1
