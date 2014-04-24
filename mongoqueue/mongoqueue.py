@@ -183,6 +183,13 @@ class Job(object):
             update={"$set": {"locked_by": None, "locked_at": None},
                     "$inc": {"attempts": 1}})
 
+    def abort(self):
+        """Intentionally terminate execution of a job, and remove it from the queue
+        """
+        return self._queue.collection.find_and_modify(
+            {"_id": self.job_id, "locked_by": self._queue.consumer_id},
+            remove=True)
+
     ## Context Manager support
 
     def __enter__(self):
