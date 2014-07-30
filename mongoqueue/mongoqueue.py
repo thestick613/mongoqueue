@@ -1,18 +1,3 @@
-#   Copyright 2012 Kapil Thangavelu
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
-
 import pymongo
 
 from datetime import datetime, timedelta
@@ -21,6 +6,7 @@ import traceback
 
 DEFAULT_INSERT = {
     "priority": 0,
+    "time": None,
     "attempts": 0,
     "locked_by": None,
     "locked_at": None,
@@ -70,28 +56,64 @@ class MongoQueue(object):
                 "$inc": {"attempts": 1}}
         )
 
-    def put(self, payload, priority=0):
+    def put(self, payload, priority=0, time=None):
         """Place a job into the queue
         """
         job = dict(DEFAULT_INSERT)
         job['priority'] = priority
+        job['time'] = time
         job['payload'] = payload
         return self.collection.insert(job)
 
     def next(self):
-        return self._wrap_one(self.collection.find_and_modify(
-            query={"locked_by": None,
-                   "locked_at": None,
-                   "attempts": {"$lt": self.max_attempts}},
+        scheduled_job = self.next_scheduled_job()
+        free_job = self.next_free_job()
+        next_job = None
+
+        if scheduled_job and scheduled_job['time'] < datetime.utcnow():
+            next_job = scheduled_job
+        else:
+            next_job = free_job
+
+        return self._wrap_one(self.collection.find_and_modify({
+                "_id": next_job["_id"]
+            },
             update={
                     "$set": {
                         "locked_by": self.consumer_id,
                         "locked_at": datetime.now()
                     }},
-            sort=[('priority', pymongo.DESCENDING)],
             new=True,
             limit=1
         ))
+
+    def next_scheduled_job(self):
+        jobs = self.collection.find({
+                "locked_by": None,
+                "locked_at": None,
+                "time": {"$ne": None},
+                "attempts": {"$lt": self.max_attempts}
+            },
+            sort=[('time', pymongo.ASCENDING)],
+            limit=1
+        )
+        for job in jobs:
+            return job
+        return None
+
+    def next_free_job(self):
+        jobs = self.collection.find({
+                "locked_by": None,
+                "locked_at": None,
+                "time": None,
+                "attempts": {"$lt": self.max_attempts}
+            },
+            sort=[('priority', pymongo.DESCENDING)],
+            limit=1
+        )
+        for job in jobs:
+            return job
+        return None
 
     def _jobs(self):
         return self.collection.find(
