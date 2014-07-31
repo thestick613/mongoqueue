@@ -22,6 +22,7 @@ import traceback
 DEFAULT_INSERT = {
     "priority": 0,
     "time": None,
+    "period": 0,
     "attempts": 0,
     "locked_by": None,
     "locked_at": None,
@@ -71,12 +72,16 @@ class MongoQueue(object):
                 "$inc": {"attempts": 1}}
         )
 
-    def put(self, payload, priority=0, time=None):
+    def put(self, payload, priority=0, time=None, period=None):
         """Place a job into the queue
         """
         job = dict(DEFAULT_INSERT)
         job['priority'] = priority
         job['time'] = time
+        # Store period as an integer representing the number of seconds
+        # because BSON format doesn't support timedelta
+        if period and type(period) == timedelta:
+            job['period'] = period.total_seconds()
         job['payload'] = payload
         return self.collection.insert(job)
 
@@ -192,6 +197,17 @@ class Job(object):
     def complete(self):
         """Job has been completed.
         """
+        if self._data['period']:
+            updated_time = self._data['time'] + timedelta(seconds=self._data['period'])
+
+            return self._queue.collection.find_and_modify(
+                {"_id": self.job_id, "locked_by": self._queue.consumer_id},
+                update={"$set":{
+                    "locked_by": None,
+                    "locked_at": None,
+                    "time": updated_time
+                }})
+
         return self._queue.collection.find_and_modify(
             {"_id": self.job_id, "locked_by": self._queue.consumer_id},
             remove=True)
@@ -204,6 +220,15 @@ class Job(object):
             update={"$set": {
                 "locked_by": None, "locked_at": None, "last_error": message},
                 "$inc": {"attempts": 1}})
+
+        if self._data['attempts'] == self._queue.max_attempts - 1 and self._data['period']:
+            updated_time = self._data['time'] + timedelta(seconds=self._data['period'])
+
+            self._queue.put(self._data['payload'],
+                priority=self._data['priority'],
+                time=updated_time,
+                period=timedelta(seconds=self._data['period']))
+
 
     def progress(self, count=0):
         """Note progress on a long running task.
