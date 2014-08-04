@@ -83,7 +83,21 @@ class MongoQueue(object):
         if period and type(period) == timedelta:
             job['period'] = period.total_seconds()
         job['payload'] = payload
+        if self.is_dupe(job):
+            return
         return self.collection.insert(job)
+
+    def is_dupe(self, job):
+        jobs = self.collection.find({
+            'payload': job['payload'],
+            'time': job['time'],
+            'period': job['period']},
+            limit=1
+        )
+        for job in jobs:
+            if job:
+                return True
+        return False
 
     def next(self):
         scheduled_job = self.next_scheduled_job()
