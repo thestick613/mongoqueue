@@ -91,7 +91,8 @@ class MongoQueue(object):
         jobs = self.collection.find({
             'payload': job['payload'],
             'time': job['time'],
-            'period': job['period']},
+            'period': job['period'],
+            'attempts': 0},
             limit=1
         )
         for job in jobs:
