@@ -110,17 +110,20 @@ class MongoQueue(object):
         else:
             next_job = free_job
 
-        return self._wrap_one(self.collection.find_and_modify({
-                "_id": next_job["_id"]
-            },
-            update={
-                    "$set": {
-                        "locked_by": self.consumer_id,
-                        "locked_at": datetime.now()
-                    }},
-            new=True,
-            limit=1
-        ))
+        if next_job is not None:
+            return self._wrap_one(self.collection.find_and_modify({
+                    "_id": next_job["_id"]
+                },
+                update={
+                        "$set": {
+                            "locked_by": self.consumer_id,
+                            "locked_at": datetime.now()
+                        }},
+                new=True,
+                limit=1
+            ))
+        else:
+            return None
 
     def next_scheduled_job(self):
         jobs = self.collection.find({
