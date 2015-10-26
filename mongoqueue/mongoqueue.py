@@ -66,7 +66,7 @@ class MongoQueue(object):
             query={
                 "locked_by": {"$ne": None},
                 "locked_at": {
-                    "$lt": datetime.now() - timedelta(self.timeout)}},
+                    "$lt": datetime.now() - timedelta(seconds=self.timeout)}},
             update={
                 "$set": {"locked_by": None, "locked_at": None},
                 "$inc": {"attempts": 1}}
