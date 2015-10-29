@@ -112,7 +112,8 @@ class MongoQueue(object):
 
         if next_job is not None:
             return self._wrap_one(self.collection.find_and_modify({
-                    "_id": next_job["_id"]
+                    "_id": next_job["_id"],
+                    "locked_by": None,
                 },
                 update={
                         "$set": {

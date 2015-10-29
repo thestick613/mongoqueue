@@ -53,7 +53,9 @@ class MongoLockTest(TestCase):
 
 def dequeue(n):
     q = MongoQueue(pymongo.MongoClient().test_queue.queue_1, "consumer_1")
-    return q.next().payload["context_id"]
+    j = q.next()
+    if j:
+        return j.payload["context_id"]
 
 class MongoQueueTest(TestCase):
 
