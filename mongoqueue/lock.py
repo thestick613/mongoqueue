@@ -57,7 +57,7 @@ class MongoLock(object):
                 '_id': self.lock_name,
                 'ttl': ttl,
                 'client_id': self._client_id},
-                w=1, j=1)
+                w=1, j=True)
         except errors.DuplicateKeyError:
             self.collection.remove(
                 {"_id": self.lock_name, 'ttl': {'$lt': datetime.now()}})
@@ -65,7 +65,7 @@ class MongoLock(object):
                 self.collection.insert(
                     {'_id': self.lock_name,
                      'ttl': ttl,
-                     'client_id': self._client_id}, w=1, j=1)
+                     'client_id': self._client_id}, w=1, j=True)
             except errors.DuplicateKeyError:
                 self._locked = False
                 return self._locked
