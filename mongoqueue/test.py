@@ -9,6 +9,7 @@ from unittest import TestCase
 
 from mongoqueue import MongoQueue
 from lock import MongoLock, lock
+import multiprocessing as mp
 
 
 class MongoLockTest(TestCase):
@@ -50,6 +51,9 @@ class MongoLockTest(TestCase):
         lock2.release()
         self.assertFalse(list(self.collection.find()))
 
+def dequeue(n):
+    q = MongoQueue(pymongo.MongoClient().test_queue.queue_1, "consumer_1")
+    return q.next().payload["context_id"]
 
 class MongoQueueTest(TestCase):
 
@@ -72,6 +76,17 @@ class MongoQueueTest(TestCase):
         self.queue.put(dict(data))
         job = self.queue.next()
         self.assert_job_equal(job, data)
+
+    def test_atomic_next(self):
+        data = {"context_id": "alpha321",
+                "data": [1, 2, 3],
+                "more-data": time.time()}
+        self.queue.put(dict(data))
+
+        p = mp.Pool()
+        q = self.queue
+        jobs = p.map(dequeue, [1,2])
+        self.assertNotEqual(jobs[0], jobs[1])
 
     def test_get_empty_queue(self):
         job = self.queue.next()
