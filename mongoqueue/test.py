@@ -185,3 +185,26 @@ class MongoQueueTest(TestCase):
             self.assertEqual(data['payload']["foobar"], 1)
         job = self.queue.next()
         self.assertEqual(job, None)
+
+    def test_next_by_payload(self):
+        self.queue.put({"type": "first_type", "param":"param1"})
+        self.queue.put({"type": "second_type", "param":"param2"})
+        self.queue.put({"type": "third_type", "param":"param3"})
+
+        job = self.queue.next({"type": "second_type"})
+        with job as data:
+            self.assertEqual(data['payload']["param"], "param2")
+
+        job = self.queue.next({"type": "third_type"})
+        with job as data:
+            self.assertEqual(data['payload']["param"], "param3")
+
+        job = self.queue.next({"type": "fourth_type"})
+        self.assertEqual(job, None)
+
+        job = self.queue.next()
+        with job as data:
+            self.assertEqual(data['payload']["param"], "param1")
+
+        job = self.queue.next()
+        self.assertEqual(job, None)

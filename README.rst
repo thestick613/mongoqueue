@@ -56,6 +56,23 @@ This returns a Job object::
   >> job.payload
   {"foobar": 1}
 
+You can prefer to select objects from the queue which have certain
+properties, which are loosely translated into mongo query syntax::
+
+  >> queue.put({"type":"alert"})
+  >> queue.put({"type":"message"})
+  >> job = queue.next({"type":"message"})
+  >> job.payload
+  {"type":"message"}
+  >> job.complete()
+  >> job = queue.next({"type":"message"})
+  >> job
+  None
+  >> job = queue.next()
+  >> job.payload
+  {"type":"alert"}
+  >> job.complete()
+
 The job class exposes some control methods on the job, for marking progress,
 completion, errors, or releasing the job back into the queue.
 
