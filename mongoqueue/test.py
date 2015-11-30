@@ -79,6 +79,9 @@ class MongoQueueTest(TestCase):
         job = self.queue.next()
         self.assert_job_equal(job, data)
 
+        job = self.queue.next()
+        self.assertEqual(job, None)
+
     def test_atomic_next(self):
         data = {"context_id": "alpha321",
                 "data": [1, 2, 3],
@@ -105,6 +108,9 @@ class MongoQueueTest(TestCase):
              self.queue.next().payload['name'],
              self.queue.next().payload['name']])
 
+        job = self.queue.next()
+        self.assertEqual(job, None)
+
     def test_complete(self):
         data = {"context_id": "alpha",
                 "data": [1, 2, 3],
@@ -115,6 +121,9 @@ class MongoQueueTest(TestCase):
         job = self.queue.next()
         job.complete()
         self.assertEqual(self.queue.size(), 0)
+
+        job = self.queue.next()
+        self.assertEqual(job, None)
 
     def test_release(self):
         data = {"context_id": "alpha",
@@ -127,6 +136,9 @@ class MongoQueueTest(TestCase):
         self.assertEqual(self.queue.size(), 1)
         job = self.queue.next()
         self.assert_job_equal(job, data)
+
+        job = self.queue.next()
+        self.assertEqual(job, None)
 
     def test_max_attempts(self):
         data = {"context_id": "alpha",
@@ -191,20 +203,21 @@ class MongoQueueTest(TestCase):
         self.queue.put({"type": "second_type", "param":"param2"})
         self.queue.put({"type": "third_type", "param":"param3"})
 
-        job = self.queue.next({"type": "second_type"})
+        job = self.queue.next({"payload.type": "second_type"})
         with job as data:
-            self.assertEqual(data['payload']["param"], "param2")
+            self.assertEqual(data["payload"]["param"], "param2")
 
-        job = self.queue.next({"type": "third_type"})
+        job = self.queue.next({"payload.type": "third_type"})
         with job as data:
-            self.assertEqual(data['payload']["param"], "param3")
+            self.assertEqual(data["payload"]["param"], "param3")
 
-        job = self.queue.next({"type": "fourth_type"})
+        job = self.queue.next({"payload.type": "fourth_type"})
         self.assertEqual(job, None)
 
         job = self.queue.next()
         with job as data:
-            self.assertEqual(data['payload']["param"], "param1")
+            self.assertEqual(data["payload"]["param"], "param1")
 
         job = self.queue.next()
         self.assertEqual(job, None)
+

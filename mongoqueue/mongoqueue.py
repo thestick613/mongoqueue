@@ -133,11 +133,9 @@ class MongoQueue(object):
                 "time": {"$ne": None},
                 "attempts": {"$lt": self.max_attempts},
             }
-        for k,v in filter_payload.iteritems():
-            _query["payload.%s" % k] = v
 
         jobs = self.collection.find(
-            _query,
+            {"$and": [_query, filter_payload]},
             sort=[('time', pymongo.ASCENDING)],
             limit=1
         )
@@ -152,11 +150,9 @@ class MongoQueue(object):
                 "time": None,
                 "attempts": {"$lt": self.max_attempts},
             }
-        for k,v in filter_payload.iteritems():
-            _query["payload.%s" % k] = v
 
         jobs = self.collection.find(
-            _query,
+            {"$and":[_query, filter_payload]},
             sort=[('priority', pymongo.DESCENDING)],
             limit=1
         )
