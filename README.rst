@@ -58,7 +58,7 @@ This returns a Job object::
 
 You can prefer to select objects from the queue which have certain
 properties, which are translated directly into mongo syntax. You only have
-to remember that the saved message is put in the "payload" key.
+to remember that the saved message is put in the "payload" key::
 
   >> queue.put({"type":"alert"})
   >> queue.put({"type":"message"})
@@ -118,14 +118,14 @@ Unit tests can be run with
 Changes
 =======
 
-0.7.5 - Nov 30th, 2015 - Allow to query by partial payload message.
-0.6.0 - Feb 4th, 2013 - Isolate passed in data from metadata in Job.
-0.5.2 - Dec 9th, 2012 - Fix for regression in sort parameters from pymongo 2.4
-0.5.1 - Dec 2nd, 2012 - Packaging fix for readme data file.
+- 0.7.5 - Nov 30th, 2015 - Allow to query by partial payload message.
+- 0.6.0 - Feb 4th, 2013 - Isolate passed in data from metadata in Job.
+- 0.5.2 - Dec 9th, 2012 - Fix for regression in sort parameters from pymongo 2.4
+- 0.5.1 - Dec 2nd, 2012 - Packaging fix for readme data file.
 
 Credits
 =======
 
-Kapil Thangavelu, author & maintainer
-Dustin Laurence, sort fix for pymongo 2.4
-Jonathan Sackett, Job data isolation.
+- Kapil Thangavelu, author & maintainer
+- Dustin Laurence, sort fix for pymongo 2.4
+- Jonathan Sackett, Job data isolation.
