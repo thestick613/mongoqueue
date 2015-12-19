@@ -83,16 +83,16 @@ The job class exposes some control methods on the job, for marking progress,
 completion, errors, or releasing the job back into the queue.
 
   - ``complete`` Marks a job as complete and removes it from the queue.
+     It will not successfully release the job if it had run for more than ``timeout`` seconds. The queueing mechanism will assume that the job has failed.
 
   - ``error`` Optionally specified with a message, releases the job back to the queue, and increments its attempts, and stores the error message on the job.
-     It has an optional parameter, called custom_retry_after, which supersedes the queue's internal ``retry_after`` property.
+     It has an optional parameter, called ``custom_retry_after``, which supersedes the queue's internal ``retry_after`` property only one time.
 
-  - ``progress`` Optionally takes a progress count integer, notes progress on the job
-     and resets the lock timeout.
+  - ``progress`` Optionally takes a progress count integer, notes progress on the job and resets the lock timeout.
 
   - ``release`` Release a job back to the pool. The attempts counter is not modified.
-     It has an optional parameter, called custom_retry_after, which supersedes the
-     queue's internal ``retry_after`` property.
+     It has an optional parameter, called ``custom_retry_after``, which supersedes the queue's internal ``retry_after`` property only one time.
+
 
 As a convience the job supports the context manager protocol::
 
