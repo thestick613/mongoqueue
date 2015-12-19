@@ -84,10 +84,8 @@ completion, errors, or releasing the job back into the queue.
 
   - ``complete`` Marks a job as complete and removes it from the queue.
 
-  - ``error`` Optionally specified with a message, releases the job back to the
-     queue, and increments its attempts, and stores the error message on the job.
-     It has an optional parameter, called custom_retry_after, which supersedes the
-     queue's internal ``retry_after`` property.
+  - ``error`` Optionally specified with a message, releases the job back to the queue, and increments its attempts, and stores the error message on the job.
+     It has an optional parameter, called custom_retry_after, which supersedes the queue's internal ``retry_after`` property.
 
   - ``progress`` Optionally takes a progress count integer, notes progress on the job
      and resets the lock timeout.
