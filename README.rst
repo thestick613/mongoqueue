@@ -29,7 +29,8 @@ consumers that are taking jobs from the queue::
   ...   MongoClient().test_db.doctest_queue,
   ...   consumer_id="consumer-1",
   ...   timeout=300,
-  ...   max_attempts=3)
+  ...   max_attempts=3,
+  ...   retry_after=0)
 
 The ``MongoQueue`` class ``timeout`` parameters specifies how long in a
 seconds a how long a job may be held by a consumer before its
@@ -38,6 +39,10 @@ considered failed.
 A job which timeouts or errors more than the ``max_attempts``
 parameter is considered permanently failed, and will no longer be
 processed.
+
+The ``retry_after`` parameter is the default waiting time, in seconds,
+between two attempts of the same job, when the first one failed. This property
+supersedes scheduling and priority.
 
 New jobs/items can be placed in the queue by passing a dictionary::
 
@@ -81,11 +86,15 @@ completion, errors, or releasing the job back into the queue.
 
   - ``error`` Optionally specified with a message, releases the job back to the
      queue, and increments its attempts, and stores the error message on the job.
+     It has an optional parameter, called custom_retry_after, which supersedes the
+     queue's internal ``retry_after`` property.
 
   - ``progress`` Optionally takes a progress count integer, notes progress on the job
      and resets the lock timeout.
 
   - ``release`` Release a job back to the pool. The attempts counter is not modified.
+     It has an optional parameter, called custom_retry_after, which supersedes the
+     queue's internal ``retry_after`` property.
 
 As a convience the job supports the context manager protocol::
 
@@ -118,6 +127,7 @@ Unit tests can be run with
 Changes
 =======
 
+- 0.7.6 - Dec 19th, 2015 - Allow to delay failed or re-released jobs.
 - 0.7.5 - Nov 30th, 2015 - Allow to query by partial payload message.
 - 0.6.0 - Feb 4th, 2013 - Isolate passed in data from metadata in Job.
 - 0.5.2 - Dec 9th, 2012 - Fix for regression in sort parameters from pymongo 2.4

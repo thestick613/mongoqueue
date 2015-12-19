@@ -57,6 +57,72 @@ def dequeue(n):
     if j:
         return j.payload["context_id"]
 
+
+class MongoQueueRetryTimeTests(TestCase):
+
+    def setUp(self):
+        self.client = pymongo.MongoClient()
+        self.db = self.client.test_queue
+        self.queue = MongoQueue(self.db.queue_1, "consumer_1", retry_after=2)
+
+    def tearDown(self):
+        self.client.drop_database("test_queue")
+
+    def test_complete_scenario(self):
+        self.queue.put({"message": "hello"})
+
+        job = self.queue.next()
+        with job as data:
+            raise Exception
+
+        time.sleep(1)
+        job2 = self.queue.next()
+        self.assertEqual(job2, None)
+        time.sleep(1.1)
+
+        job3 = self.queue.next()
+        with job as data:
+            self.assertEqual(data["message"], "hello")
+        job4 = self.queue.next()
+        self.assertEqual(job4, None)
+
+    def test_error_with_increased_retry(self):
+        self.queue.put({"message": "hello"})
+        job = self.queue.next()
+        job.error(custom_retry_after=3)
+
+        time.sleep(1)
+        job = self.queue.next()
+        self.assertEqual(job, None)
+
+        time.sleep(2.1)
+
+        job2 = self.queue.next()
+        with job2 as data:
+            self.assertEqual(data["message"], "hello")
+
+        job3 = self.queue.next()
+        self.assertEqual(job3, None)
+
+    def test_release_with_increased_retry(self):
+        self.queue.put({"message": "hello"})
+        job = self.queue.next()
+        job.release(custom_retry_after=3)
+
+        time.sleep(1)
+        job = self.queue.next()
+        self.assertEqual(job, None)
+
+        time.sleep(2.1)
+
+        job2 = self.queue.next()
+        with job2 as data:
+            self.assertEqual(data["message"], "hello")
+
+        job3 = self.queue.next()
+        self.assertEqual(job3, None)
+
+
 class MongoQueueTest(TestCase):
 
     def setUp(self):

@@ -26,7 +26,8 @@ DEFAULT_INSERT = {
     "attempts": 0,
     "locked_by": None,
     "locked_at": None,
-    "last_error": None
+    "last_error": None,
+    "retry_after": datetime.utcnow()-timedelta(days=365*10),
 }
 
 
@@ -34,13 +35,14 @@ class MongoQueue(object):
     """A queue class
     """
 
-    def __init__(self, collection, consumer_id, timeout=300, max_attempts=3):
+    def __init__(self, collection, consumer_id, timeout=300, max_attempts=3, retry_after=0):
         """
         """
         self.collection = collection
         self.consumer_id = consumer_id
         self.timeout = timeout
         self.max_attempts = max_attempts
+        self.retry_after = retry_after
 
     def close(self):
         """Close the in memory queue connection.
@@ -68,8 +70,9 @@ class MongoQueue(object):
                 "locked_at": {
                     "$lt": datetime.now() - timedelta(seconds=self.timeout)}},
             update={
-                "$set": {"locked_by": None, "locked_at": None},
-                "$inc": {"attempts": 1}}
+                "$set": {"locked_by": None, "locked_at": None,
+                         "retry_after": datetime.utcnow() + timedelta(seconds=self.retry_after)},
+                "$inc": {"attempts": 1},}
         )
 
     def put(self, payload, priority=0, time=None, period=None):
@@ -78,6 +81,7 @@ class MongoQueue(object):
         job = dict(DEFAULT_INSERT)
         job['priority'] = priority
         job['time'] = time
+
         # Store period as an integer representing the number of seconds
         # because BSON format doesn't support timedelta
         if period and type(period) == timedelta:
@@ -132,6 +136,7 @@ class MongoQueue(object):
                 "locked_at": None,
                 "time": {"$ne": None},
                 "attempts": {"$lt": self.max_attempts},
+                "retry_after": {"$lte": datetime.utcnow()},
             }
 
         jobs = self.collection.find(
@@ -149,6 +154,7 @@ class MongoQueue(object):
                 "locked_at": None,
                 "time": None,
                 "attempts": {"$lt": self.max_attempts},
+                "retry_after": {"$lte": datetime.utcnow()},
             }
 
         jobs = self.collection.find(
@@ -237,13 +243,15 @@ class Job(object):
             {"_id": self.job_id, "locked_by": self._queue.consumer_id},
             remove=True)
 
-    def error(self, message=None):
+    def error(self, message=None, custom_retry_after=None):
         """Note an error processing a job, and return it to the queue.
         """
+        if not custom_retry_after:
+            custom_retry_after = self._queue.retry_after
         self._queue.collection.find_and_modify(
             {"_id": self.job_id, "locked_by": self._queue.consumer_id},
             update={"$set": {
-                "locked_by": None, "locked_at": None, "last_error": message},
+                "retry_after": datetime.utcnow()+timedelta(seconds=custom_retry_after), "locked_by": None, "locked_at": None, "last_error": message},
                 "$inc": {"attempts": 1}})
 
         if self._data['attempts'] == self._queue.max_attempts - 1 and self._data['period']:
@@ -262,12 +270,14 @@ class Job(object):
             {"_id": self.job_id, "locked_by": self._queue.consumer_id},
             update={"$set": {"progress": count, "locked_at": datetime.now()}})
 
-    def release(self):
+    def release(self, custom_retry_after=None):
         """Put the job back into_queue.
         """
+        if not custom_retry_after:
+            custom_retry_after = self._queue.retry_after
         return self._queue.collection.find_and_modify(
             {"_id": self.job_id, "locked_by": self._queue.consumer_id},
-            update={"$set": {"locked_by": None, "locked_at": None},
+            update={"$set": {"locked_by": None, "locked_at": None, "retry_after": datetime.utcnow()+timedelta(seconds=custom_retry_after)},
                     "$inc": {"attempts": 1}})
 
     def abort(self):
