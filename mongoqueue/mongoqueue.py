@@ -75,6 +75,29 @@ class MongoQueue(object):
                 "$inc": {"attempts": 1},}
         )
 
+    def repair_sharded_id(self):
+        """Clear out stale locks on queues that are sharded by the _id key.
+        You should run this within a distributed lock, just to be safe.
+
+        Increments per job attempt counter.
+        """
+        for doc in self.collection.find(
+                query={
+                    "locked_by": {"$ne": None},
+                    "locked_at": {
+                         "$lt": datetime.now() - timedelta(seconds=self.timeout)}}):
+
+            self.collection.find_one_and_update(
+                query={
+                    "_id": doc["_id"],
+                    "locked_by": {"$ne": None},
+                    "locked_at": {
+                        "$lt": datetime.now() - timedelta(seconds=self.timeout)}},
+                update={
+                    "$set": {"locked_by": None, "locked_at": None,
+                             "retry_after": datetime.utcnow() + timedelta(seconds=self.retry_after)},
+                    "$inc": {"attempts": 1},})
+
     def put(self, payload, priority=0, time=None, period=None):
         """Place a job into the queue
         """

@@ -125,6 +125,7 @@ Unit tests can be run with
 Changes
 =======
 
+- 0.7.7 - Dec 29th, 2015 - Added function to repair stale locks on sharded clusters.
 - 0.7.6 - Dec 19th, 2015 - Allow to delay failed or re-released jobs.
 - 0.7.5 - Nov 30th, 2015 - Allow to query by partial payload message.
 - 0.6.0 - Feb 4th, 2013 - Isolate passed in data from metadata in Job.
