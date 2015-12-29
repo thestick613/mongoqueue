@@ -82,13 +82,13 @@ class MongoQueue(object):
         Increments per job attempt counter.
         """
         for doc in self.collection.find(
-                query={
+                filter={
                     "locked_by": {"$ne": None},
                     "locked_at": {
                          "$lt": datetime.now() - timedelta(seconds=self.timeout)}}):
 
             self.collection.find_one_and_update(
-                query={
+                filter={
                     "_id": doc["_id"],
                     "locked_by": {"$ne": None},
                     "locked_at": {
