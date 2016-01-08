@@ -98,7 +98,7 @@ class MongoQueue(object):
                              "retry_after": datetime.utcnow() + timedelta(seconds=self.retry_after)},
                     "$inc": {"attempts": 1},})
 
-    def put(self, payload, priority=0, time=None, period=None):
+    def put(self, payload, priority=0, time=None, period=None, no_dupe=True):
         """Place a job into the queue
         """
         job = dict(DEFAULT_INSERT)
@@ -110,8 +110,9 @@ class MongoQueue(object):
         if period and type(period) == timedelta:
             job['period'] = period.total_seconds()
         job['payload'] = payload
-        if self.is_dupe(job):
-            return
+        if no_dupe:
+            if self.is_dupe(job):
+                return
         return self.collection.insert(job)
 
     def is_dupe(self, job):

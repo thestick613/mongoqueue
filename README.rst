@@ -54,6 +54,9 @@ priority items::
 
   >> queue.put({"foobar": 0}, priority=1})
 
+You can disable in the ``put`` function the unique check for a job, by
+passing `no_dupe=False`, which is, by default, ``True``.
+
 An item can be fetched out by calling the ``next`` method on a queue.
 This returns a Job object::
 
@@ -125,6 +128,7 @@ Unit tests can be run with
 Changes
 =======
 
+- 0.7.9 - Jan 08th, 2016 - Added no_dupe parameter in put.
 - 0.7.7 - Dec 29th, 2015 - Added function to repair stale locks on sharded clusters.
 - 0.7.6 - Dec 19th, 2015 - Allow to delay failed or re-released jobs.
 - 0.7.5 - Nov 30th, 2015 - Allow to query by partial payload message.
