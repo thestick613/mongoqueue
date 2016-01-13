@@ -93,7 +93,10 @@ completion, errors, or releasing the job back into the queue.
 
   - ``progress`` Optionally takes a progress count integer, notes progress on the job and resets the lock timeout.
 
-  - ``release`` Release a job back to the pool. The attempts counter is not modified.
+  - ``release`` Release a job back to the pool. The attempts counter is modified.
+     It has an optional parameter, called ``custom_retry_after``, which supersedes the queue's internal ``retry_after`` property only one time.
+
+  - ``defer`` Release a job back to the pool. The attempts counter is not modified.
      It has an optional parameter, called ``custom_retry_after``, which supersedes the queue's internal ``retry_after`` property only one time.
 
 
@@ -128,6 +131,7 @@ Unit tests can be run with
 Changes
 =======
 
+- 0.8.0 - Jan 08th, 2016 - Fix ``release`` function and create ``defer``.
 - 0.7.9 - Jan 08th, 2016 - Added no_dupe parameter in put.
 - 0.7.7 - Dec 29th, 2015 - Added function to repair stale locks on sharded clusters.
 - 0.7.6 - Dec 19th, 2015 - Allow to delay failed or re-released jobs.

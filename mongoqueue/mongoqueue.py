@@ -295,7 +295,7 @@ class Job(object):
             update={"$set": {"progress": count, "locked_at": datetime.now()}})
 
     def release(self, custom_retry_after=None):
-        """Put the job back into_queue.
+        """Put the job back into_queue and increase the nr. of attempts
         """
         if not custom_retry_after:
             custom_retry_after = self._queue.retry_after
@@ -303,6 +303,16 @@ class Job(object):
             {"_id": self.job_id, "locked_by": self._queue.consumer_id},
             update={"$set": {"locked_by": None, "locked_at": None, "retry_after": datetime.utcnow()+timedelta(seconds=custom_retry_after)},
                     "$inc": {"attempts": 1}})
+
+    def defer(self, custom_retry_after=None):
+        """Put the job back into_queue without increasing nr. of attempts
+        """
+        if not custom_retry_after:
+            custom_retry_after = self._queue.retry_after
+        return self._queue.collection.find_and_modify(
+            {"_id": self.job_id, "locked_by": self._queue.consumer_id},
+            update={"$set": {"locked_by": None, "locked_at": None, "retry_after": datetime.utcnow()+timedelta(seconds=custom_retry_after)},
+                    })
 
     def abort(self):
         """Intentionally terminate execution of a job, and remove it from the queue
