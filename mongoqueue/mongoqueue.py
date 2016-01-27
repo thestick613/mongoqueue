@@ -128,8 +128,15 @@ class MongoQueue(object):
                 return True
         return False
 
-    def next(self, filter_payload={}):
-        scheduled_job = self.next_scheduled_job(filter_payload=filter_payload)
+    def next_free_fast(self, filter_payload={}):
+        return self.next(filter_payload=filter_payload, include_scheduled=False)
+
+    def next(self, filter_payload={}, include_scheduled=True):
+        if include_scheduled:
+            scheduled_job = self.next_scheduled_job(filter_payload=filter_payload)
+        else:
+            scheduled_job = None
+
         free_job = self.next_free_job(filter_payload=filter_payload)
         next_job = None
 
