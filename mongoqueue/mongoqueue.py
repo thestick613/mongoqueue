@@ -138,13 +138,25 @@ class MongoQueue(object):
                 "retry_after": {"$lte": datetime.utcnow()},
             }
 
-        job = self.collection.find_one(
+        next_job = self.collection.find_one(
             {"$and":[_query, filter_payload]},
         )
-        if job:
-            return job
+
+        if next_job is not None:
+            return self._wrap_one(self.collection.find_and_modify({
+                    "_id": next_job["_id"],
+                    "locked_by": None,
+                },
+                update={
+                        "$set": {
+                            "locked_by": self.consumer_id,
+                            "locked_at": datetime.now()
+                        }},
+                new=True,
+                limit=1
+            ))
         else:
-            return self.next(filter_payload=filter_payload, include_scheduled=False)
+            return None
 
     def next_free_fast(self, filter_payload={}):
         return self.next(filter_payload=filter_payload, include_scheduled=False)
