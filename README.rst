@@ -131,6 +131,7 @@ Unit tests can be run with
 Changes
 =======
 
+- 0.8.2 - Jan 30th, 2016 - Add a ``next_free_fastest`` function, which ignores scheduled jobs and priority and just returns one valid job
 - 0.8.1 - Jan 27th, 2016 - Add a ``next_free_fast`` function, which ignores scheduled jobs
 - 0.8.0 - Jan 08th, 2016 - Fix ``release`` function and create ``defer``.
 - 0.7.9 - Jan 08th, 2016 - Added no_dupe parameter in put.
