@@ -128,6 +128,24 @@ class MongoQueue(object):
                 return True
         return False
 
+    def next_free_fastest(self, filter_payload={}):
+        # not necessarily the priority one, but any job will do, when under heavy load.
+        _query = {
+                "locked_by": None,
+                "locked_at": None,
+                "time": None,
+                "attempts": {"$lt": self.max_attempts},
+                "retry_after": {"$lte": datetime.utcnow()},
+            }
+
+        job = self.collection.find_one(
+            {"$and":[_query, filter_payload]},
+        )
+        if job:
+            return job
+        else:
+            return self.next(filter_payload=filter_payload, include_scheduled=False)
+
     def next_free_fast(self, filter_payload={}):
         return self.next(filter_payload=filter_payload, include_scheduled=False)
 
