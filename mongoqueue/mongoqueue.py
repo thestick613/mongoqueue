@@ -17,7 +17,7 @@ import pymongo
 
 from datetime import datetime, timedelta
 import traceback
-
+import random
 
 DEFAULT_INSERT = {
     "priority": 0,
@@ -128,19 +128,33 @@ class MongoQueue(object):
                 return True
         return False
 
-    def next_free_fastest(self, filter_payload={}):
+    def next_free_fastest(self, filter_payload={}, hack_priority=False):
         # not necessarily the priority one, but any job will do, when under heavy load.
         _query = {
                 "locked_by": None,
                 "locked_at": None,
                 "time": None,
                 "attempts": {"$lt": self.max_attempts},
-                "retry_after": {"$lte": datetime.utcnow()},
             }
 
-        next_job = self.collection.find_one(
-            {"$and":[_query, filter_payload]},
-        )
+        if hack_priority:
+            _query["retry_after"] = {"$lte": datetime.utcnow() + timedelta(seconds=random.randint(-30,150))}
+        else:
+            _query["retry_after"] = {"$lte": datetime.utcnow()}
+
+        next_job = None
+        if hack_priority:
+            if random.random() <= 0.5:
+                _query["priority"] = {"$gte": 1}
+                next_job = self.collection.find_one(
+                    {"$and":[_query, filter_payload]},
+                )
+                del _query["priority"]
+
+        if not next_job:
+            next_job = self.collection.find_one(
+                {"$and":[_query, filter_payload]},
+            )
 
         if next_job is not None:
             return self._wrap_one(self.collection.find_and_modify({
