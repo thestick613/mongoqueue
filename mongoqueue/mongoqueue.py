@@ -138,13 +138,13 @@ class MongoQueue(object):
             }
 
         if hack_priority:
-            _query["retry_after"] = {"$lte": datetime.utcnow() + timedelta(seconds=random.randint(-30,150))}
+            _query["retry_after"] = {"$lte": datetime.utcnow() + timedelta(seconds=random.randint(-60,240))}
         else:
             _query["retry_after"] = {"$lte": datetime.utcnow()}
 
         next_job = None
         if hack_priority:
-            if random.random() <= 0.5:
+            if random.random() <= 0.1:
                 _query["priority"] = {"$gte": 1}
                 next_job = self.collection.find_one(
                     {"$and":[_query, filter_payload]},
